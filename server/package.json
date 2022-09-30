@@ -1,0 +1,23 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^4.8.0",
+    "@trpc/client": "^10.0.0-proxy-beta.10",
+    "@trpc/next": "^10.0.0-proxy-beta.10",
+    "@trpc/react": "^10.0.0-proxy-beta.10",
+    "@trpc/server": "^10.0.0-proxy-beta.10",
+    "zod": "^3.19.1"
+  }
+}
