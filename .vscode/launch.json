@@ -14,7 +14,7 @@
             "preLaunchTask": "tsc: build - server/tsconfig.json",
             "program": "${workspaceFolder}/server/trcpRouter.ts",
             "resolveSourceMapLocations": [
-                "${workspaceFolder}/server/out/**/*.js"
+                "${workspaceFolder}/server/dist/**/*.js"
             ]
         }
     ]

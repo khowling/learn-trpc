@@ -1,3 +1,5 @@
 
 **/node_modules
-**/out
+**/dist
+__mongo_data__
+nohup.out
