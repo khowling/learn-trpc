@@ -32,7 +32,7 @@ const defaultUserSelect = Prisma.validator<Prisma.UserSelect>()({
   email: true
 });
 
-const appRouter = t.router({
+const usersRouter = t.router({
   list: t.procedure
     .input(
       z.object({
@@ -76,7 +76,7 @@ const appRouter = t.router({
       };
     }),
 
-    userById: t.procedure
+    byId: t.procedure
       .input(z.object({
           id: z.string()
         })
@@ -96,7 +96,7 @@ const appRouter = t.router({
         return user;
       }),
 
-    userCreate: t.procedure
+    add: t.procedure
       .input(
         z.object({
           email: z.string().min(1).max(32),
@@ -133,6 +133,9 @@ const appRouter = t.router({
 // only export *type signature* of router!
 // to avoid accidentally importing your API
 // into client-side code
+export const appRouter = t.router({
+  user: usersRouter
+});
 export type AppRouter = typeof appRouter;
 
 const port = process.env.PORT || 5000
