@@ -3,16 +3,18 @@ import { nodeHTTPRequestHandler } from '@trpc/server/adapters/node-http';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { observable } from '@trpc/server/observable';
 
-import  * as ws from "ws"
+import * as ws from 'ws';
 import { z } from 'zod';
 
 import * as http from 'http'
 
 import { EventEmitter } from 'events';
 
-// ORM
-import { Prisma, PrismaClient } from '@prisma/client'
-const prisma = new PrismaClient()
+import {MongoClient, WithId, InsertOneResult} from 'mongodb';
+import { ObjectId } from 'bson'
+
+const client = new MongoClient(process.env.DATABASE_URL || "mongodb://localhost:27017/dev?replicaSet=rs0");
+await client.connect();
 
 // create a global event emitter (could be replaced by redis, etc)
 const ee = new EventEmitter();
@@ -23,14 +25,17 @@ interface Post {
   data: String;
 }
 
+const ItemSKU = z.object({
+  name:    z.string(),
+  type: z.enum(['Manufactured', 'Purchased']),
+  tags:  z.array(z.string())
+})
+
+// Type inference
+export type ItemSKU = z.infer<typeof ItemSKU>; // string
+
 
 const t = trpc.initTRPC.create();
-
-const defaultUserSelect = Prisma.validator<Prisma.UserSelect>()({
-  id: true,
-  name: true,
-  email: true
-});
 
 const usersRouter = t.router({
   list: t.procedure
@@ -48,71 +53,39 @@ const usersRouter = t.router({
        */
 
       const limit = input.limit ?? 50;
-      const { cursor } = input;
+      const projection = {name: 1,type: 1, tags:1 }
 
-      const users = await prisma.user.findMany({
-        select: defaultUserSelect,
-        // get an extra item at the end which we'll use as next cursor
-        take: limit + 1,
-        where: {},
-        cursor: cursor
-          ? {
-              id: cursor,
-            }
-          : undefined
-      });
-      let nextCursor: typeof cursor | undefined = undefined;
-      if (users.length > limit) {
-        // Remove the last item and use it as next cursor
+      return (await client.db().collection('item').find({}, { limit }).toArray()) as WithId<ItemSKU>[]
 
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const nextItem = users.pop()!;
-        nextCursor = nextItem.id;
-      }
-
-      return {
-        items: users.reverse(),
-        nextCursor,
-      };
     }),
 
     byId: t.procedure
       .input(z.object({
-          id: z.string()
+          id: z.string().regex(/^[0-9a-fA-F]{24}$/, "require ObjectId")
         })
       )
       .query(async ({input}) => {
         const { id } = input;
-        const user =  await prisma.user.findUnique({
-          select: defaultUserSelect,
-          where: {id}
-        });
-        if (!user) {
+        const item =  (await client.db().collection('item').findOne({_id: new ObjectId(id)})) as WithId<ItemSKU>
+        if (!item) {
           throw new trpc.TRPCError({
             code: 'NOT_FOUND',
             message: `No users with id '${id}'`,
           });
         }
-        return user;
+        return item;
       }),
 
     add: t.procedure
-      .input(
-        z.object({
-          email: z.string().min(1).max(32),
-          name: z.string().min(1)
-        })
-      )
+      .input(ItemSKU)
       .mutation(async ({input}) => {
-        const id = `${Math.random()}`;
 
-        const user = await prisma.user.create({
-          data: input
-        });
-        return user;
+        const item = (await client.db().collection('item').insertOne(input)) as InsertOneResult<ItemSKU>
+
+        return item;
       }),
 
-    onEvent: t.procedure.subscription(() => {
+    onAdd: t.procedure.subscription(() => {
       // `resolve()` is triggered for each client when they start subscribing `onAdd`
       // return an `observable` with a callback which is triggered immediately
       return observable<Post>((emit) => {
@@ -188,3 +161,5 @@ process.on('SIGTERM', () => {
   handler.broadcastReconnectNotification();
   wss.close();
 });
+
+console.log (process.env.DATABASE_URL)
