@@ -1,11 +1,15 @@
 import React, {useState} from 'react';
-import { httpBatchLink } from '@trpc/client';
+import { httpBatchLink, createWSClient, wsLink } from '@trpc/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc } from './utils/trpc';
 import logo from './logo.svg';
 import './App.css';
 import IndexPage  from './pages/home';
 
+//const ws_url = process.env.REACT_APP_ORDERING_PORT ? `ws://${window.location.hostname}:${process.env.REACT_APP_ORDERING_PORT}` : `wss://${window.location.hostname}/ws/ordering/`
+const wsClient = createWSClient({
+  url: `ws://localhost:5000`,
+});
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -13,6 +17,9 @@ function App() {
     trpc.createClient({
       
       links: [
+        wsLink({
+          client: wsClient,
+        }),
         httpBatchLink({
           url: '/trpc',
           // optional

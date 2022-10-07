@@ -1,0 +1,14 @@
+
+{
+    "name": "full-stack-typesafe-ts",
+    "workspaces": [
+      "server",
+      "ui"
+    ],
+    "devDependencies": {
+        "@types/node": "^18.7.23",
+        "ts-node": "^10.9.1",
+        "typescript": "^4.8.4"
+    }
+  }
+
