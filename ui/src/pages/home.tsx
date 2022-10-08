@@ -172,6 +172,7 @@ function DemoForm({setOpen}: DemoForm) {
 
 export default function IndexPage() {
 
+  /* Ugly code to get rid of the trpc Observability wrapper */
   type Output = inferProcedureOutput<AppRouter['item']['onAdd']>;
   type UnpackObservable<X> = X extends Observable<infer I, unknown> ? I : any
   type A = UnpackObservable<Output>
