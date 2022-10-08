@@ -89,7 +89,7 @@ function modelRoutes<T extends z.ZodTypeAny>(schema: T, coll: string, enableSubs
             };
           });
       }) :
-        t.procedure.use(t.middleware(async ({ ctx, next }) =>  {throw new TRPCError({ code: 'METHOD_NOT_SUPPORTED' })})).subscription(() => '')
+        t.procedure.use(t.middleware(async ({ ctx, next }) =>  {throw new TRPCError({ code: 'METHOD_NOT_SUPPORTED', message: 'Subscriptions have not been enabled for this collection' })})).subscription(() => '')
   })
 }
 

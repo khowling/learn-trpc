@@ -11,7 +11,6 @@ interface DemoForm {
   setOpen: (open: boolean) => void;
 }
 
-
 function DemoForm({setOpen}: DemoForm) {
 
   const utils = trpc.useContext();
@@ -23,18 +22,11 @@ function DemoForm({setOpen}: DemoForm) {
     },
   });
 
-
   return (
-    <>
         <form  
           method="POST"
           onSubmit={async (e) => {
-            /**
-             * In a real app you probably don't want to use this manually
-             * Checkout React Hook Form - it works great with tRPC
-             * @see https://react-hook-form.com/
-             * @see https://kitchen-sink.trpc.io/react-hook-form
-             */
+
             e.preventDefault();
             const $form = e.currentTarget;
             const values = Object.fromEntries(new FormData($form));
@@ -164,8 +156,6 @@ function DemoForm({setOpen}: DemoForm) {
             </div>
        
         </form>
-         
-      </>
   )
 }
 
@@ -174,10 +164,9 @@ export default function IndexPage() {
 
   /* Ugly code to get rid of the trpc Observability wrapper */
   type Output = inferProcedureOutput<AppRouter['item']['onAdd']>;
+  type ObservableOutput = Extract<Output, Observable<any, any>>;
   type UnpackObservable<X> = X extends Observable<infer I, unknown> ? I : any
-  type A = UnpackObservable<Output>
-
-  
+  type A = UnpackObservable<ObservableOutput>
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [realtimeItems, setRealtimeItems] = useState<A[]>([])
