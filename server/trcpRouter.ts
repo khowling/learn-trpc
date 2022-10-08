@@ -93,12 +93,13 @@ function modelRoutes<T extends z.ZodTypeAny>(schema: T, coll: string, enableSubs
   })
 }
 
-// only export *type signature* of router!
-// to avoid accidentally importing your API
-// into client-side code
+
 export const appRouter = t.router({
   item: modelRoutes(itemSKUModel, 'item', true)
 });
 
+// only export *type signature* of router!
+// to avoid accidentally importing your API
+// into client-side code
 export type AppRouter = typeof appRouter;
 

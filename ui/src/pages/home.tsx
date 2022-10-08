@@ -31,12 +31,15 @@ function DemoForm({setOpen}: DemoForm) {
             const $form = e.currentTarget;
             const values = Object.fromEntries(new FormData($form));
 
+
             type Input = inferProcedureInput<AppRouter['item']['add']>;
               
             const input: Input = {
               name: values.name ,
               type: values.type,
-              tags: values.tags,
+              required: values.required && new Date(values.required.toString()),
+              additionalInfo: values.additionalInfo?.toString(),
+              notifyMe: values.notifyMe === 'on'
             } as Input
 
             
@@ -45,6 +48,7 @@ function DemoForm({setOpen}: DemoForm) {
               //const a = await itemSKUModel.parseAsync(input)
               await addPost.mutateAsync(input);
               $form.reset();
+              setOpen(false)
             } catch (cause) {
               console.error({ cause }, 'Failed to add post');
             }
@@ -76,27 +80,13 @@ function DemoForm({setOpen}: DemoForm) {
                     border-transparent
                     focus:border-gray-500 focus:bg-white focus:ring-0
                   ">
-                  <option>Corporate event</option>
-                  <option>Wedding</option>
-                  <option>Birthday</option>
-                  <option>Other</option>
+                  <option>Manufactured</option>
+                  <option>Purchased</option>
                 </select>
               </label>
               <label className="block">
-                <span className="text-gray-700">Email address</span>
-                <input type="email" className="
-                    mt-1
-                    block
-                    w-full
-                    rounded-md
-                    bg-gray-100
-                    border-transparent
-                    focus:border-gray-500 focus:bg-white focus:ring-0
-                  " placeholder="john@example.com"/>
-              </label>
-              <label className="block">
                 <span className="text-gray-700">When is your event?</span>
-                <input type="date" className="
+                <input name="required" type="date" className="
                     mt-1
                     block
                     w-full
@@ -109,7 +99,7 @@ function DemoForm({setOpen}: DemoForm) {
 
               <label className="block">
                 <span className="text-gray-700">Additional details</span>
-                <textarea className="
+                <textarea name="additionalInfo" className="
                     mt-1
                     block
                     w-full
@@ -123,7 +113,7 @@ function DemoForm({setOpen}: DemoForm) {
                 <div className="mt-2">
                   <div>
                     <label className="inline-flex items-center">
-                      <input type="checkbox" className="
+                      <input name="notifyMe" type="checkbox" className="
                           rounded
                           bg-gray-200
                           border-transparent
@@ -131,23 +121,23 @@ function DemoForm({setOpen}: DemoForm) {
                           text-gray-700
                           focus:ring-1 focus:ring-offset-2 focus:ring-gray-500
                         "/>
-                      <span className="ml-2">Email me news and special offers</span>
+                      <span className="ml-2">Notify Me of Updates</span>
                     </label>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-50 py-3 text-right sm:px-6">
+            <div className="bg-gray-50 py-3 my-6 text-right">
               <button
                   onClick={() => setOpen(false)}
-                  className="inline-flex justify-center rounded-md border border-transparent bg-red-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  className="inline-flex justify-center rounded-md border border-transparent bg-red-600 py-2 px-4 ml-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >Cancel
               </button>
               <button
                 type="submit"
                 disabled={addPost.isLoading}
-                className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4  ml-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               >Save
               </button>
               {addPost.error && (
@@ -212,33 +202,63 @@ export default function IndexPage() {
         {postsQuery.status === 'loading' && '(loading)'}
       </h2>
 
-      {postsQuery.data?.map((item, index) => (
+      <div className="overflow-x-auto">
+        <table className="table table-compact w-full">
+          <thead>
+            <tr>
+              <th></th> 
+              <th>Id</th> 
+              <th>Name</th> 
+              <th>Type</th> 
+              <th>Required Date</th> 
+              <th>Additional Info</th> 
+            </tr>
+          </thead> 
+          <tbody>
+          {postsQuery.data?.map((item, index) => (
+            <tr key={index}>
+              <th>{index}</th> 
+              <td>{item._id}</td> 
+              <td>{item.name}</td> 
+              <td>{item.type}</td> 
+              <td>{item.required?.toString()}</td> 
+              <td>{item.additionalInfo}</td> 
+            </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-            <article key={item._id?.toString()}>
-              <h3>{item.name}</h3>
-              <p>{item.type}</p>
-              <p>{item.tags}</p>
-            </article>
+      <h2>Latest Posts</h2>
 
-      ))}
+      <div className="overflow-x-auto">
+        <table className="table table-compact w-full">
+          <thead>
+            <tr>
+              <th></th> 
+              <th>Id</th> 
+              <th>Name</th> 
+              <th>Type</th> 
+              <th>Required Date</th> 
+              <th>Additional Info</th> 
+            </tr>
+          </thead> 
+          <tbody>
+          {realtimeItems.map((item, index) => (
+                <tr key={`R-${index}`}>
+                  <th>{`R-${index}`}</th> 
+                  <td>{item._id}</td> 
+                  <td>{item.name}</td> 
+                  <td>{item.type}</td> 
+                  <td>{item.required?.toString()}</td> 
+                  <td>{item.additionalInfo}</td> 
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
 
-      <h2>
-        Real time Posts
-      </h2>
-
-      {realtimeItems.map((item: A, index) => (
-
-      <article key={item._id.toString()}>
-        <h3>{item.name}</h3>
-        <p>{item.type}</p>
-        <p>{item.tags}</p>
-      </article>
-
-      ))}
-
-      <hr />
-
-      <button className="btn" onClick={() => setDialogOpen(true)}>Open</button>
+      <button className="btn btn-wide mt-6" onClick={() => setDialogOpen(true)}>Add</button>
 
       <SlideOut openprop={dialogOpen} setOpen={setDialogOpen}>
           <DemoForm setOpen={setDialogOpen}/>

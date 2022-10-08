@@ -1,6 +1,14 @@
 import { z } from 'zod';
 
 
+// To handel Dates (copied from zod README)
+const dateSchema = z.preprocess((arg) => {
+  if (typeof arg == "string" || arg instanceof Date) return new Date(arg);
+}, z.date());
+export type DateSchema = z.infer<typeof dateSchema>;
+// type DateSchema = Date
+
+
 export const factoryOrderModel = z.object({
     status: z.enum(['Draft', 'Required', 'InFactory', 'Cancel', 'Available']),
     product_ref: z.object({
@@ -10,8 +18,10 @@ export const factoryOrderModel = z.object({
   }) 
     
   export const itemSKUModel = z.object({
-    name: z.string(),
+    name: z.string().min(1, 'Name is Required'),
     type: z.enum(['Manufactured', 'Purchased']),
-    tags: z.string()
+    required: dateSchema,
+    additionalInfo: z.string(),
+    notifyMe: z.boolean()
   })
 

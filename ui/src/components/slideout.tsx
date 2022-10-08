@@ -48,11 +48,11 @@ export default function SlideOut({openprop, setOpen, children}: SlideOut) {
                       <div className="absolute top-0 left-0 -ml-8 flex pt-4 pr-2 sm:-ml-10 sm:pr-4">
                         <button
                           type="button"
-                          className="rounded-md text-gray-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-white"
+                          className="rounded-md text-gray-300 hover:text-white focus:outline-none "
                           onClick={() => setOpen(false)}
                         >
                           <span className="sr-only">Close panel</span>
-                          close
+                          Close
                         </button>
                       </div>
                     </Transition.Child>
