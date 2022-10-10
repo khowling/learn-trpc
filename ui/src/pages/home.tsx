@@ -15,10 +15,11 @@ function DemoForm({setOpen}: DemoForm) {
 
   const utils = trpc.useContext();
 
-  const addPost = trpc.item.add.useMutation({
+  const mutation  = trpc.item.add.useMutation({
     async onSuccess() {
       // refetches posts after a post is added
       await utils.item.list.invalidate();
+      setOpen(false)
     },
   });
 
@@ -46,9 +47,10 @@ function DemoForm({setOpen}: DemoForm) {
             
             try {
               //const a = await itemSKUModel.parseAsync(input)
-              await addPost.mutateAsync(input);
+              //await addPost.mutateAsync(input);
+              await mutation.mutate(input)
               $form.reset();
-              setOpen(false)
+              
             } catch (cause) {
               console.error({ cause }, 'Failed to add post');
             }
@@ -130,18 +132,20 @@ function DemoForm({setOpen}: DemoForm) {
 
             <div className="bg-gray-50 py-3 my-6 text-right">
               <button
+                  type="button"
+                  disabled={mutation.isLoading}
                   onClick={() => setOpen(false)}
                   className="inline-flex justify-center rounded-md border border-transparent bg-red-600 py-2 px-4 ml-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >Cancel
               </button>
               <button
                 type="submit"
-                disabled={addPost.isLoading}
+                disabled={mutation.isLoading}
                 className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4  ml-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               >Save
               </button>
-              {addPost.error && (
-                <p style={{ color: 'red' }}>{addPost.error.message}</p>
+              {mutation.error && (
+                <p style={{ color: 'red' }}>{mutation.error.message}</p>
               )}
             </div>
        
@@ -149,6 +153,16 @@ function DemoForm({setOpen}: DemoForm) {
   )
 }
 
+interface ConnectedInfo {
+  status: ConnectedStatus,
+  message?: string
+}
+
+enum ConnectedStatus {
+  Connected,
+  Trying,
+  Error
+}
 
 export default function IndexPage() {
 
@@ -160,15 +174,19 @@ export default function IndexPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [realtimeItems, setRealtimeItems] = useState<A[]>([])
+  const [connected, setConnected] = useState({status: ConnectedStatus.Trying} as ConnectedInfo)
 
   const utils = trpc.useContext();
   const postsQuery = trpc.item.list.useQuery(
     {
-      limit: 5,
+      limit: 50,
     });
   
-
-  trpc.item.onAdd.useSubscription(undefined, {
+    // this returns a useEffect
+    trpc.item.onAdd.useSubscription(undefined, {
+      onStarted() {
+        setConnected({status: ConnectedStatus.Connected})
+      },
       onData(data) {
         setRealtimeItems((p) => {
           console.log (data)
@@ -176,6 +194,7 @@ export default function IndexPage() {
         })
       },
       onError(err) {
+        setConnected({status: ConnectedStatus.Error, message: err.message})
         console.error('Subscription error:', err);
         // we might have missed a message - invalidate cache
       },
@@ -186,10 +205,10 @@ export default function IndexPage() {
     <div className="container mx-auto">
 
 
-        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">Welcome to your tRPC starter!</h2>
+        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">CRUD & Realtime data with tRPC & MongoAPIs!</h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          If you get stuck, check <a href="https://trpc.io">the docs</a>, write a
-          message in our <a href="https://trpc.io/discord">Discord-channel</a>, or
+          If you get stuck, check tRPC <a href="https://trpc.io">the docs</a>, write a
+          message in the tRPC <a href="https://trpc.io/discord">Discord-channel</a>, or
           write a message in{' '}
           <a href="https://github.com/trpc/trpc/discussions">
             GitHub Discussions
@@ -197,8 +216,8 @@ export default function IndexPage() {
           .
         </p>
 
-      <h2>
-        Latest Posts
+      <h2 className="my-6  text-2xl font-bold tracking-tight text-gray-900">
+        Latest Posts (Query)
         {postsQuery.status === 'loading' && '(loading)'}
       </h2>
 
@@ -229,9 +248,33 @@ export default function IndexPage() {
         </table>
       </div>
 
-      <h2>Latest Posts</h2>
+      <h2 className="my-6  text-2xl font-bold tracking-tight text-gray-900">Latest Posts (Change Stream)</h2>
 
-      <div className="overflow-x-auto">
+      { connected.status === ConnectedStatus.Trying ? 
+        <div className="alert alert-warning shadow-lg">
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+          <span>Trying to connect to Log.....</span>
+        </div>
+      </div>
+      : connected.status === ConnectedStatus.Error ? 
+          <div className="alert alert-error shadow-lg">
+          <div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span>Error! Cannot connect: {connected.message}</span>
+          </div>
+        </div>
+      :
+
+      <div className="alert alert-success shadow-lg">
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <span>Connected to live data stream</span>
+        </div>
+      </div>
+      }
+
+      <div className="mt-5 overflow-x-auto">
         <table className="table table-compact w-full">
           <thead>
             <tr>

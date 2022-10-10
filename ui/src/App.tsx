@@ -21,7 +21,7 @@ function App() {
           client: wsClient,
         }),
         httpBatchLink({
-          url: '/trpc',
+          url: 'http://localhost:5000/trpc',
           // optional
           headers() {
             return {

@@ -81,11 +81,15 @@ function modelRoutes<T extends z.ZodTypeAny>(schema: T, coll: string, enableSubs
               console.log (output)
               emit.next(output);
             };
+
+
             // trigger `onAdd()` when `add` is triggered in our event emitter
-            (changeStream as ChangeStream<Document, ChangeStreamDocument<Document>>).on('change', onAdd);
+            const em = changeStream && changeStream.on('change', onAdd);
+            em && console.log(em.listenerCount('change'))
             // unsubscribe function when client disconnects or stops subscribing
             return () => {
-              (changeStream as ChangeStream<Document, ChangeStreamDocument<Document>>).off('change', onAdd);
+              const em = changeStream && changeStream.off('change', onAdd);
+              em && console.log(em.listenerCount('change'))
             };
           });
       }) :
