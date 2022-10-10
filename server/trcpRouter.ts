@@ -1,11 +1,13 @@
 import * as trpc from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { z } from 'zod';
+
 import {factoryOrderModel, itemSKUModel} from './schema/schemas.js'
 import {MongoClient, ChangeStreamInsertDocument, ChangeStream, ChangeStreamDocument} from 'mongodb';
 import { ObjectId } from 'bson'
 import { TRPCError } from '@trpc/server';
 
+export type ZodError = z.ZodError
 export type WithId<TSchema> = TSchema & {
   _id: string;
 };

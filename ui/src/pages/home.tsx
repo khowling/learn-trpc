@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { trpc } from '../utils/trpc';
 import { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
-import type { AppRouter, WithId } from '../../../server/trcpRouter';
+import type { AppRouter, WithId, ZodError } from '../../../server/trcpRouter';
 import { itemSKUModel } from '@full-stack-typesafe-ts/server';
 import SlideOut from '../components/slideout'
 import { Observable, observable } from '@trpc/server/observable';
@@ -11,8 +11,13 @@ interface DemoForm {
   setOpen: (open: boolean) => void;
 }
 
-function DemoForm({setOpen}: DemoForm) {
+interface FormErrors {
+  [inputName: string]: any
+}
 
+function DemoForm({setOpen}: DemoForm) {
+  const formRef = React.useRef<HTMLFormElement>(null);
+  const [formErrors, setFormErrors ] = useState<FormErrors>({})
   const utils = trpc.useContext();
 
   const mutation  = trpc.item.add.useMutation({
@@ -23,8 +28,23 @@ function DemoForm({setOpen}: DemoForm) {
     },
   });
 
+  async function validate() {
+    const $form = formRef.current as HTMLFormElement;
+    const values = Object.fromEntries(new FormData($form));
+    try {
+      const zresult = await itemSKUModel.parseAsync(values)
+      console.log (zresult)
+      setFormErrors({})
+    } catch (e) {
+      const zerr = e as ZodError
+      const res = zerr.issues.reduce((a: any, c: any) => { return {...a, [c.path[0]]: {...c}}},{})
+      setFormErrors(res)
+    }
+  }
+
   return (
-        <form  
+        <form
+          ref={formRef}
           method="POST"
           onSubmit={async (e) => {
 
@@ -61,30 +81,37 @@ function DemoForm({setOpen}: DemoForm) {
           <div className="grid grid-cols-1 gap-6">
               <label className="block">
                 <span className="text-gray-700">Name</span>
-                <input type="text" name="name" className="
+                <input onChange={validate} type="text" name="name" className={`
+                    ${formErrors['name'] ? 'border-red-500 focus:border-red-500' : 'focus:border-gray-500'}
                     mt-1
                     block
                     w-full
                     rounded-md
                     bg-gray-100
                     border-transparent
-                    focus:border-gray-500 focus:bg-white focus:ring-0
-                  " placeholder=""/>
+                    focus:bg-white focus:ring-0`}
+                    placeholder=""/>
+                { formErrors['name'] && 
+                  <span className="ml-1 text-red-500 text-sm">{formErrors['name'].message}</span>
+                }
               </label>
               <label className="block">
                 <span className="text-gray-700">Type?</span>
-                <select name="type" className="
+                <select onChange={validate} name="type" className={`
+                  ${formErrors['type'] ? 'border-red-500 focus:border-red-500' : 'focus:border-gray-500'}
                     block
                     w-full
                     mt-1
                     rounded-md
                     bg-gray-100
                     border-transparent
-                    focus:border-gray-500 focus:bg-white focus:ring-0
-                  ">
+                    focus:bg-white focus:ring-0`}>
                   <option>Manufactured</option>
                   <option>Purchased</option>
                 </select>
+                { formErrors['type'] && 
+                  <span className="ml-1 text-red-500 text-sm">{formErrors['type'].message}</span>
+                }
               </label>
               <label className="block">
                 <span className="text-gray-700">When is your event?</span>
