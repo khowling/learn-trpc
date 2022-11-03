@@ -193,6 +193,58 @@ enum ConnectedStatus {
 
 export default function IndexPage() {
 
+  const [tab, setTab] = useState(0)
+  return (
+    <div className="container mx-auto">
+
+      
+
+        { /* 
+        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">CRUD & Realtime data with tRPC & MongoAPIs!</h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          If you get stuck, check tRPC <a href="https://trpc.io">the docs</a>, write a
+          message in the tRPC <a href="https://trpc.io/discord">Discord-channel</a>, or
+          write a message in{' '}
+          <a href="https://github.com/trpc/trpc/discussions">
+            GitHub Discussions
+          </a>
+          .
+        </p>
+*/ }
+        <div className="mt-6 flex justify-center space-x-16 ">
+          { ["Manage SKUs", "Factory", "Stats"].map((t,i) => 
+            <a className={`tab tab-lg ${tab === i ? 'tab-active bg-blue-400': 'bg-white'}`} 
+              onClick={() => setTab(i)}><p className="font-sans text-xl uppercase font-extrabold">{t}</p></a>  
+          )}
+        </div>
+        { tab === 0 ?
+          <div className="flex flex-row flex-nowrap gap-1">
+            { ["keith", "wrgerg", "234234", "erwer","fwrerg"].map ((t,i) =>
+            
+            <div className="basis-1/5">
+              <div className="flex flex-col rounded-md bg-gray-100 gap-1 p-1">
+                { ["item1", "item2", "item1", "item2"].map ((t,i2) => 
+                  <div className="bg-white">{t}</div>
+                )}
+                
+              </div>
+            </div>
+            
+            )}
+            
+          </div>
+        : tab ===1 ?
+          <ItemSKU/>
+        : 
+          <div>2</div>
+        }
+
+    </div>
+  )
+}
+
+function ItemSKU() {
+
   /* Ugly code to get rid of the trpc Observability wrapper */
   type Output = inferProcedureOutput<AppRouter['item']['onAdd']>;
   type ObservableOutput = Extract<Output, Observable<any, any>>;
@@ -228,21 +280,8 @@ export default function IndexPage() {
     });
 
   return (
-
-    <div className="container mx-auto">
-
-
-        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">CRUD & Realtime data with tRPC & MongoAPIs!</h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          If you get stuck, check tRPC <a href="https://trpc.io">the docs</a>, write a
-          message in the tRPC <a href="https://trpc.io/discord">Discord-channel</a>, or
-          write a message in{' '}
-          <a href="https://github.com/trpc/trpc/discussions">
-            GitHub Discussions
-          </a>
-          .
-        </p>
-
+<>
+      
       <h2 className="my-6  text-2xl font-bold tracking-tight text-gray-900">
         Latest Posts (Query)
         {postsQuery.status === 'loading' && '(loading)'}
@@ -252,8 +291,6 @@ export default function IndexPage() {
         <table className="table table-compact w-full">
           <thead>
             <tr>
-              <th></th> 
-              <th>Id</th> 
               <th>Name</th> 
               <th>Type</th> 
               <th>Required Date</th> 
@@ -262,9 +299,8 @@ export default function IndexPage() {
           </thead> 
           <tbody>
           {postsQuery.data?.map((item, index) => (
-            <tr key={index}>
-              <th>{index}</th> 
-              <td>{item._id}</td> 
+            <tr className="hover" key={index} onClick={() => setDialogOpen(true /* item._id */)}>
+              
               <td>{item.name}</td> 
               <td>{item.type}</td> 
               <td>{item.required?.toString()}</td> 
@@ -333,6 +369,7 @@ export default function IndexPage() {
       <SlideOut openprop={dialogOpen} setOpen={setDialogOpen}>
           <DemoForm setOpen={setDialogOpen}/>
       </SlideOut>
-    </div>
+
+</>
   );
 };
