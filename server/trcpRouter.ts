@@ -2,14 +2,14 @@ import * as trpc from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { z } from 'zod';
 
-import {factoryOrderModel, itemSKUModel} from './schema/schemas.js'
-import {MongoClient, ChangeStreamInsertDocument, ChangeStream, ChangeStreamDocument} from 'mongodb';
+import {recordId, factoryOrderModel, itemSKUModel} from './schema/schemas.js'
+import {MongoClient, ChangeStreamInsertDocument, ChangeStream, ChangeStreamDocument, WithId, Document} from 'mongodb';
 import { ObjectId } from 'bson'
 import { TRPCError } from '@trpc/server';
 
 export type ZodError = z.ZodError
-export type WithId<TSchema> = TSchema & {
-  _id: string;
+export type WithWebId<TSchema> = TSchema & {
+  id: string;
 };
 
 const client = new MongoClient(process.env.DATABASE_URL || "mongodb://localhost:27017/dev?replicaSet=rs0");
@@ -24,6 +24,11 @@ function modelRoutes<T extends z.ZodTypeAny>(schema: T, coll: string, enableSubs
   const changeStream = enableSubscription && client.db().collection(coll).watch([
     { $match: {'operationType': { $in: ['insert']}}}
   ])
+
+  function idTransform<T>  (rec: WithId<Document>): WithWebId<T>  {
+    const {_id, ...rest} : { _id: ObjectId} = rec
+    return {id: _id.toHexString(), ...rest as T}
+  }
   
   return t.router({
     list: t.procedure
@@ -43,32 +48,36 @@ function modelRoutes<T extends z.ZodTypeAny>(schema: T, coll: string, enableSubs
         const limit = input.limit ?? 50;
         const projection = {name: 1,type: 1, tags:1 }
 
-        return (await client.db().collection(coll).find({}, { limit }).toArray()) as WithId<ZType>[]
+        const items = (await client.db().collection(coll).find({}, { limit }).toArray()).map((d) => idTransform<ZType>(d))
+        return items
 
       }),
 
       byId: t.procedure
-        .input(z.object({
-            id: z.string().regex(/^[0-9a-fA-F]{24}$/, "require ObjectId")
-          })
-        )
+        .input(recordId)
         .query(async ({input}) => {
           const { id } = input;
-          const item =  (await client.db().collection(coll).findOne({_id: new ObjectId(id)})) as WithId<ZType>
+          const item =  await client.db().collection(coll).findOne({_id: new ObjectId(id)})
           if (!item) {
             throw new trpc.TRPCError({
               code: 'NOT_FOUND',
               message: `No users with id '${id}'`,
             });
           }
-          return item;
+          return idTransform<ZType>(item) 
         }),
 
       add: t.procedure
-        .input(schema)
-        .mutation(async ({input}) => {
-          const item = await client.db().collection(coll).insertOne(input as WithId<ZType>)
-          return item;
+        .input(schema.and(recordId.partial({id: true})))
+        .mutation(async ({input} : {input: WithId<ZType>}) => {
+          if (!input.id) {
+            const item = await client.db().collection(coll).insertOne(input)
+            return item;
+          } else {
+            const {id, ...rest} = input
+            const item = await client.db().collection(coll).updateOne({_id: new ObjectId(id)},{ $set: rest })
+            return item
+          }
         }),
 
       onAdd: enableSubscription ? t.procedure
