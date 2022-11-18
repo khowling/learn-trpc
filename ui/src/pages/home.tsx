@@ -50,7 +50,7 @@ function Factory() {
   type UnpackObservable<X> = X extends Observable<infer I, unknown> ? I : any
   type A = UnpackObservable<ObservableOutput>
 
-
+  const [dialog, setDialog] = useState<DialogInterface>({open: false})
   const [connected, setConnected] = useState({status: ConnectedStatus.Trying} as ConnectedInfo)
   const [realtimeItems, setRealtimeItems] = useState<A[]>([])
   const [c, setC] = useState(0)
@@ -138,17 +138,17 @@ function Factory() {
           <div className="flex flex-col rounded-md bg-slate-50 gap-2 p-2">
 
           { i === 0 &&
-            <a href="/new" className="hover:border-blue-500 hover:border-solid hover:bg-white hover:text-blue-500 group w-full flex flex-col items-center justify-center rounded-md border-2 border-dashed border-slate-300 text-sm leading-6 text-slate-900 font-medium py-3">
+            <button onClick={() => setDialog({open: true})} className="hover:border-blue-500 hover:border-solid hover:bg-white hover:text-blue-500 group w-full flex flex-col items-center justify-center rounded-md border-2 border-dashed border-slate-300 text-sm leading-6 text-slate-900 font-medium py-3">
               <svg className="group-hover:text-blue-500 mb-1 text-slate-400" width="20" height="20" fill="currentColor" aria-hidden="true">
                 <path d="M10 5a1 1 0 0 1 1 1v3h3a1 1 0 1 1 0 2h-3v3a1 1 0 1 1-2 0v-3H6a1 1 0 1 1 0-2h3V6a1 1 0 0 1 1-1Z" />
               </svg>
               New Factory Order
-            </a>
+            </button>
             }
             
             { ["item1", "item2", "item1", "item2"].map ((t,i2) => 
               
-              <a key={i2} onClick={console.log} className="hover:bg-blue-500 hover:ring-blue-500 hover:shadow-md group rounded-md p-2 bg-slate-100 ring-1 ring-slate-200 shadow-sm text-sm leading-6">
+              <button key={i2} onClick={() => setDialog({open: true})} className="text-left hover:bg-blue-500 hover:ring-blue-500 hover:shadow-md group rounded-md p-2 bg-white ring-1 ring-slate-200 shadow-sm text-sm leading-6">
                 <dl className="grid sm:block lg:grid xl:block grid-cols-2 grid-rows-2 items-center">
                   <div className="group-hover:text-white font-semibold text-slate-900">
                       {t}
@@ -187,7 +187,7 @@ function Factory() {
                   </div>
                  
                 </dl>
-              </a>
+              </button>
             
             )}
             
@@ -197,6 +197,10 @@ function Factory() {
         )}
         
       </div>
+
+      <SlideOut openprop={dialog.open} setOpen={(open: boolean) => setDialog({open: false})}>
+          
+      </SlideOut>
     </>
   )
 }
@@ -246,7 +250,7 @@ function ItemSKU() {
               <td>{item.type}</td> 
               <td>{item.required ? new Date(item.required).toDateString() : ''}</td> 
               <td>{item.additionalInfo}</td> 
-              <td>{item.notifyMe}</td> 
+              <td><input checked={item.notifyMe} disabled type="checkbox"/></td> 
             </tr>
             ))}
           </tbody>
@@ -281,6 +285,7 @@ interface FormState {
   data : ItemFormData, 
   errors: FormErrors 
 }
+
 
 function DemoForm({Close, recordId}: DemoFormInterface) {
 
@@ -393,7 +398,7 @@ function DemoForm({Close, recordId}: DemoFormInterface) {
                 <div className="mt-2">
                   <div>
                     <label className="inline-flex items-center">
-                      <input value={form.data['notifyMe'] ? 'true' : 'false'}  onChange={e => inputUpdate(e.target.name, e.target.checked)}  name="notifyMe" type="checkbox" 
+                      <input checked={form.data['notifyMe']}  onChange={e => inputUpdate(e.target.name, e.target.checked)}  name="notifyMe" type="checkbox" 
                           className="rounded bg-gray-200 border-transparent focus:border-transparent focus:bg-gray-200 text-gray-700 focus:ring-1 focus:ring-offset-2 focus:ring-gray-500"/>
                       <span className="ml-2">Notify Me of Updates</span>
                       { form.errors['notifyMe'] && 

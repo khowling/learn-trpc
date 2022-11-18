@@ -10,13 +10,13 @@ interface SlideOut {
 export default function SlideOut({openprop, setOpen, children}: SlideOut) {
     return (
       <Transition.Root show={openprop} as={Fragment}>
-        <Dialog as="div" className="relative z-10" onClose={setOpen}>
+        <Dialog as="div" className="relative z-20" onClose={setOpen}>
           <Transition.Child
             as={Fragment}
-            enter="ease-in-out duration-500"
+            enter="ease-in-out duration-300"
             enterFrom="opacity-0"
             enterTo="opacity-100"
-            leave="ease-in-out duration-500"
+            leave="ease-in-out duration-300"
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
@@ -28,20 +28,20 @@ export default function SlideOut({openprop, setOpen, children}: SlideOut) {
               <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
                 <Transition.Child
                   as={Fragment}
-                  enter="transform transition ease-in-out duration-500 sm:duration-700"
+                  enter="transform transition ease-in-out duration-300 sm:duration-500"
                   enterFrom="translate-x-full"
                   enterTo="translate-x-0"
-                  leave="transform transition ease-in-out duration-500 sm:duration-700"
+                  leave="transform transition ease-in-out duration-300 sm:duration-500"
                   leaveFrom="translate-x-0"
                   leaveTo="translate-x-full"
                 >
                   <Dialog.Panel className="pointer-events-auto relative w-screen max-w-md">
                     <Transition.Child
                       as={Fragment}
-                      enter="ease-in-out duration-500"
+                      enter="ease-in-out duration-300"
                       enterFrom="opacity-0"
                       enterTo="opacity-100"
-                      leave="ease-in-out duration-500"
+                      leave="ease-in-out duration-300"
                       leaveFrom="opacity-100"
                       leaveTo="opacity-0"
                     >
