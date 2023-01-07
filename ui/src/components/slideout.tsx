@@ -1,13 +1,18 @@
 import { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react'
 
+export interface DialogInterface { 
+  open: boolean; 
+  recordId?: string; 
+}
+
 interface SlideOut {
     openprop: boolean;
     setOpen: (open: boolean) => void;
     children: React.ReactNode;
   }
   
-export default function SlideOut({openprop, setOpen, children}: SlideOut) {
+export function SlideOut({openprop, setOpen, children}: SlideOut) {
     return (
       <Transition.Root show={openprop} as={Fragment}>
         <Dialog as="div" className="relative z-20" onClose={setOpen}>
@@ -46,6 +51,7 @@ export default function SlideOut({openprop, setOpen, children}: SlideOut) {
                       leaveTo="opacity-0"
                     >
                       <div className="absolute top-0 left-0 -ml-8 flex pt-4 pr-2 sm:-ml-10 sm:pr-4">
+                        {/* 
                         <button
                           type="button"
                           className="rounded-md text-gray-300 hover:text-white focus:outline-none "
@@ -54,6 +60,7 @@ export default function SlideOut({openprop, setOpen, children}: SlideOut) {
                           <span className="sr-only">Close panel</span>
                           Close
                         </button>
+                        */}
                       </div>
                     </Transition.Child>
                     <div className="flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl">

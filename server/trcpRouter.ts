@@ -110,7 +110,8 @@ function modelRoutes<T extends z.ZodTypeAny>(schema: T, coll: string, enableSubs
 
 
 export const appRouter = t.router({
-  item: modelRoutes(itemSKUModel, 'item', true)
+  item: modelRoutes(itemSKUModel, 'item', true),
+  order: modelRoutes(factoryOrderModel, 'order', false)
 });
 
 // only export *type signature* of router!
