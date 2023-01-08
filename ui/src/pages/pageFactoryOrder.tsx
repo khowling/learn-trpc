@@ -108,7 +108,7 @@ export default function OrderForm({Close, recordId}: DemoFormInterface) {
                 }
               </label>
 
-              <SearchBox label="Item"/>
+              <LookupSearch clickedon="1" label="Item" values={[{key:"1", text:"Mountain Bike"}, {key:"2", text: "Road Bike"}]}/>
 
               
               <label className="block">
@@ -146,14 +146,23 @@ export default function OrderForm({Close, recordId}: DemoFormInterface) {
   )
 }
 
-function SearchBox({label}: {label: string}) {
+function LookupSearch({clickedon, label, values}: {clickedon: string, label: string, values: Array<{key: string, text: string}>}) {
 
-  const [results, setResults] = useState({display: false})
+  const [value, setValue] = useState('')
+  const [saveClick, setSaveClick] = useState(clickedon)
+  const [results, setResults] = useState({display: false, selectedidx: -1})
 
-  function focus (e: React.FocusEvent<HTMLInputElement>) {
-    console.log ('focus')
-    setResults({display: false})
+  if (clickedon !== saveClick) {
+    setSaveClick(clickedon)
+    if (results.display)
+      setResults({...results, display: false})
   }
+
+  const { isLoading, isError, data, error } = trpc.item.byId.useQuery({ id: recordId || "dummy" }, {enabled: typeof recordId !== 'undefined', onSuccess: (serverdata) => {
+    const data = {...serverdata, ...(serverdata.required && { required: new Date(serverdata.required.toString()).toJSON().split('T')[0] })}
+    console.log ('onSuccess', data)
+    setForm({ data, errors: validate(data) });
+  }})
 
   return (
     <label className="block">
@@ -161,28 +170,51 @@ function SearchBox({label}: {label: string}) {
 
       <div className="mt-1 pointer-events-auto relative z-10 w-[24.125rem] rounded-lg bg-white text-[0.8125rem] leading-5 text-slate-700 shadow-xl shadow-black/5 ring-1 ring-slate-700/10">
 
-        <div className="flex items-center">
-          <svg className="absolute ml-3.5 mr-2 h-7 w-5 stroke-slate-500 my-2.5" fill="none" viewBox="0 0 24 24" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-          <input className={`grow pl-10 ${results.display ? "rounded-t-lg": "rounded-lg"}  border-inherit`} onFocus={() => setResults({display: true})} onBlur={() => setResults({display: false})}  placeholder="Search..." type="text"/>
-        </div>
+          { results.selectedidx === -1 ?
 
+            <div className="flex items-center">
+              <svg className="absolute ml-3.5 mr-2 h-7 w-5 stroke-slate-500 my-2.5" fill="none" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+
+              <input className={`grow pl-10 ${results.display ? "rounded-t-lg": "rounded-lg"}  border-inherit`} onClick={() => setResults({...results, display: true})}   placeholder="Search..." type="text" value={value} onChange={({target}) =>setValue(target.value)}/>
+            </div>
+            :
+            <div className="flex items-center">
+              <div className="flex items-center  border border-solid py-1 px-2 m-1 rounded-lg bg-indigo-600 text-white">
+                
+                <div className="flex items-center text-base">{values[results.selectedidx]?.text}</div>
+                <a onClick={() => setResults({selectedidx: -1, display: true})}>
+                  <svg className="ml-2 mt-1 h-3 w-3 items-center stroke-white " fill="none" viewBox="0 0 24 24" strokeWidth="4">
+                    <line x2="18" y2="18" />
+                    <line x1="18" y2="18" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          }
+       
         <div className={`${results.display ? "": "hidden" } border-t border-slate-400/20 py-3 px-3.5`}>
           <div className="mb-1.5 text-[0.6875rem] font-semibold text-slate-500">Recent searches</div>
-          <div className="flex items-center rounded-md p-1.5 bg-indigo-600 text-white">
-            <svg className="mr-2.5 h-5 w-5 flex-none stroke-white" fill="none" viewBox="0 0 24 24" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
-            </svg>Tailwind Labs / Website Redesign
-          </div>
-          <div className="flex items-center rounded-md p-1.5">
+
+          { values.map(({key, text}, index) => 
+              <a key={index} className="flex items-center rounded-md p-1.5 hover:bg-indigo-600 hover:text-white" onClick={() => setResults({display: false, selectedidx: index})}>
+              <svg className="mr-2.5 h-5 w-5 flex-none stroke-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+              </svg>{text}
+            </a>
+          )}
+
+
+          <div className="flex items-center rounded-md p-1.5 hover:bg-indigo-600 hover:text-white">
             <svg className="mr-2.5 h-5 w-5 flex-none stroke-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
             </svg>Laravel LLC / Conference Branding
           </div>
+
         </div>
         
-        <div className="hidden border-t border-slate-400/20 py-3 px-3.5">
+        <div className={`${results.display ? "": "hidden" } border-t border-slate-400/20 py-3 px-3.5`}>
           <div className="flex items-center rounded-md p-1.5">
             <svg className="mr-2.5 h-5 w-5 flex-none stroke-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
