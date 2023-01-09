@@ -48,7 +48,7 @@ function modelRoutes<T extends z.ZodTypeAny>(schema: T, coll: string, enableSubs
         const limit = input.limit ?? 50;
         const projection = {name: 1,type: 1, tags:1 }
 
-        const items = (await client.db().collection(coll).find({}, { limit }).toArray()).map((d) => idTransform<ZType>(d))
+        const items = (await client.db().collection(coll).find({}, { limit, projection }).toArray()).map((d) => idTransform<ZType>(d))
         return items
 
       }),

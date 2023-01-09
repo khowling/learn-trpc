@@ -52,8 +52,8 @@ interface ConnectedInfo {
     });
   
     useEffect(() => {
-      const t = setInterval(() => setC((o) => o+1), 200)
-      return () => clearInterval(t)
+      //const t = setInterval(() => setC((o) => o+1), 200)
+      //return () => clearInterval(t)
     },[])
   
     return (
