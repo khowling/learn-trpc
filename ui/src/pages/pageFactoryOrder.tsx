@@ -90,6 +90,7 @@ export default function OrderForm({Close, recordId}: DemoFormInterface) {
           <select value={form.data['status']} onFocus={() => setClickedon(clickedon+1)} onChange={e => inputUpdate(e.target.name, e.target.value)} name="status" className={`
             ${form.errors['status'] ? 'border-red-500 focus:border-red-500' : 'focus:border-gray-500'}
               block w-full mt-1 rounded-md bg-gray-100 border-transparent focus:bg-white focus:ring-0`}>
+            <option></option>
             <option>Draft</option>
             <option>Required</option>
             <option>InFactory</option>

@@ -1,8 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { trpc } from '../utils/trpc';
-import { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
-import type { AppRouter, WithWebId, ZodError } from '../../../server/trcpRouter';
+
+import type { inferRouterOutputs, inferProcedureOutput } from '@trpc/server';
+import type { AppRouter, ZodError, OrderState } from '../../../server/trcpRouter';
 import {SlideOut, DialogInterface} from '../components/slideout'
 import { Observable, observable } from '@trpc/server/observable';
 import OrderForm from './pageFactoryOrder';
@@ -18,23 +19,25 @@ interface ConnectedInfo {
     Trying,
     Error
   }
+
+  type RouterOutput = inferRouterOutputs<AppRouter>;
   
   export function PageFactory() {
   
     /* Ugly code to get rid of the trpc Observability wrapper */
-    type Output = inferProcedureOutput<AppRouter['item']['onAdd']>;
-    type ObservableOutput = Extract<Output, Observable<any, any>>;
-    type UnpackObservable<X> = X extends Observable<infer I, unknown> ? I : any
-    type A = UnpackObservable<ObservableOutput>
+    //type Output = RouterOutput['orderstate']['onAdd'];
+    //type ObservableOutput = Extract<Output, Observable<any, any>>;
+    //type UnpackObservable<X> = X extends Observable<infer I, unknown> ? I : any
+    //type A = UnpackObservable<ObservableOutput>
   
     const [dialog, setDialog] = useState<DialogInterface>({open: false})
     const [connected, setConnected] = useState({status: ConnectedStatus.Trying} as ConnectedInfo)
-    const [realtimeItems, setRealtimeItems] = useState<A[]>([])
+    const [realtimeItems, setRealtimeItems] = useState<OrderState[]>([])
     const [c, setC] = useState(0)
   
       
     // this returns a useEffect
-    trpc.item.onAdd.useSubscription(undefined, {
+    trpc.orderstate.onAdd.useSubscription(undefined, {
       onStarted() {
         setConnected({status: ConnectedStatus.Connected})
       },

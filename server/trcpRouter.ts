@@ -20,11 +20,6 @@ const t = trpc.initTRPC.create();
 function modelRoutes<T extends z.ZodTypeAny>(schema: T, coll: string, enableSubscription: boolean) {
   type ZType = z.infer<typeof schema>
 
-  // Change Stream for subscription websocket routes
-  const changeStream = enableSubscription && client.db().collection(coll).watch([
-    { $match: {'operationType': { $in: ['insert']}}}
-  ])
-
   function idTransform<T>  (rec: WithId<Document>): WithWebId<T>  {
     const {_id, ...rest} : { _id: ObjectId} = rec
     return {id: _id.toHexString(), ...rest as T}
@@ -53,65 +48,72 @@ function modelRoutes<T extends z.ZodTypeAny>(schema: T, coll: string, enableSubs
 
       }),
 
-      byId: t.procedure
-        .input(recordId)
-        .query(async ({input}) => {
-          const { id } = input;
-          const item =  await client.db().collection(coll).findOne({_id: new ObjectId(id)})
-          if (!item) {
-            throw new trpc.TRPCError({
-              code: 'NOT_FOUND',
-              message: `No users with id '${id}'`,
-            });
-          }
-          return idTransform<ZType>(item) 
-        }),
-
-      add: t.procedure
-        .input(schema.and(recordId.partial({id: true})))
-        .mutation(async ({input} : {input: WithId<ZType>}) => {
-          if (!input.id) {
-            const item = await client.db().collection(coll).insertOne(input)
-            return item;
-          } else {
-            const {id, ...rest} = input
-            const item = await client.db().collection(coll).updateOne({_id: new ObjectId(id)},{ $set: rest })
-            return item
-          }
-        }),
-
-      onAdd: enableSubscription ? t.procedure
-        .subscription(() => {
-          // `resolve()` is triggered for each client when they start subscribing `onAdd`
-          // return an `observable` with a callback which is triggered immediately
-          return observable<WithId<ZType>>((emit) => {
-            
-            const onAdd = (data: ChangeStreamInsertDocument<WithId<ZType>>) => {
-              // emit data to client
-              const output = data.fullDocument
-              console.log (output)
-              emit.next(output);
-            };
-
-
-            // trigger `onAdd()` when `add` is triggered in our event emitter
-            const em = changeStream && changeStream.on('change', onAdd);
-            em && console.log(em.listenerCount('change'))
-            // unsubscribe function when client disconnects or stops subscribing
-            return () => {
-              const em = changeStream && changeStream.off('change', onAdd);
-              em && console.log(em.listenerCount('change'))
-            };
+    byId: t.procedure
+      .input(recordId)
+      .query(async ({input}) => {
+        const { id } = input;
+        const item =  await client.db().collection(coll).findOne({_id: new ObjectId(id)})
+        if (!item) {
+          throw new trpc.TRPCError({
+            code: 'NOT_FOUND',
+            message: `No users with id '${id}'`,
           });
-      }) :
-        t.procedure.use(t.middleware(async ({ ctx, next }) =>  {throw new TRPCError({ code: 'METHOD_NOT_SUPPORTED', message: 'Subscriptions have not been enabled for this collection' })})).subscription(() => '')
+        }
+        return idTransform<ZType>(item) 
+      }),
+
+    add: t.procedure
+      .input(schema.and(recordId.partial({id: true})))
+      .mutation(async ({input} : {input: WithId<ZType>}) => {
+        if (!input.id) {
+          const item = await client.db().collection(coll).insertOne(input)
+          return item;
+        } else {
+          const {id, ...rest} = input
+          const item = await client.db().collection(coll).updateOne({_id: new ObjectId(id)},{ $set: rest })
+          return item
+        }
+      })
+
   })
 }
 
+  // Change Stream for subscription websocket routes
+  const changeStream = client.db().collection('order').watch([
+    { $match: {'operationType': { $in: ['insert']}}}
+  ])
+
+
+export type OrderState = z.infer<typeof factoryOrderModel>
 
 export const appRouter = t.router({
   item: modelRoutes(itemSKUModel, 'item', true),
-  order: modelRoutes(factoryOrderModel, 'order', false)
+  order: modelRoutes(factoryOrderModel, 'order', false),
+  orderstate: t.router({ 
+    onAdd: t.procedure
+    .subscription(() => {
+      // `resolve()` is triggered for each client when they start subscribing `onAdd`
+      // return an `observable` with a callback which is triggered immediately
+      return observable<OrderState>((emit) => {
+        
+        const onAdd = (data: ChangeStreamInsertDocument<OrderState>)  => {
+          // emit data to client
+          const output = data.fullDocument 
+          console.log (output)
+          emit.next(output);
+        };
+  
+        // trigger `onAdd()` when `add` is triggered in our event emitter
+        const em = changeStream.on('change', onAdd);
+        console.log(em.listenerCount('change'))
+        // unsubscribe function when client disconnects or stops subscribing
+        return () => {
+          const em = changeStream.off('change', onAdd);
+          console.log(em.listenerCount('change'))
+        };
+      });
+    })
+  })
 });
 
 // only export *type signature* of router!

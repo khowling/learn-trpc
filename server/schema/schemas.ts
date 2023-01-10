@@ -15,7 +15,7 @@ export const recordId = z.object({
 export const factoryOrderModel = z.object({
   status: z.enum(['Draft', 'Required', 'InFactory', 'Cancel', 'Available']),
   item_ref: recordId,
-  quantity: z.number().min(0)
+  quantity: z.coerce.number().min(0)
 }) 
   
 export const itemSKUModel = z.object({
